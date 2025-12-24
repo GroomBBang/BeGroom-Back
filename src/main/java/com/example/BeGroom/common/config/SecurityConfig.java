@@ -44,9 +44,10 @@ public class SecurityConfig {
                                 .accessDeniedHandler(jwtAuthorizationHandler) // 403의 경우
                 )
 
-                .authorizeHttpRequests(auth ->
-                        auth.requestMatchers(HttpMethod.POST, "/members/**")
-                                .permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/members").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth").permitAll()
+                                .anyRequest().authenticated())
                 .build();
     }
 
