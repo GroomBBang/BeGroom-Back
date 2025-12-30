@@ -34,10 +34,11 @@ public class MemberNotification extends BaseEntity {
     @Column(nullable = true)
     private String metaData;
 
-    public MemberNotification(Member member, Notification notification) {
+    public MemberNotification(Member member, Notification notification, String metaData) {
         this.member = member;
         this.notification = notification;
         this.isRead = false;
+        this.metaData = metaData;
     }
 
     public void read() {

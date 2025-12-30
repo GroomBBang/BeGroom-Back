@@ -10,12 +10,15 @@ import com.example.BeGroom.notification.dto.CreateNotificationReqDto;
 import com.example.BeGroom.notification.dto.GetMemberNotificationResDto;
 import com.example.BeGroom.notification.repository.MemberNotificationRepository;
 import com.example.BeGroom.notification.repository.NotificationRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -23,6 +26,7 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberNotificationRepository memberNotificationRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -33,16 +37,14 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void send(Member receiver, NotificationType type, String title, String msg, String link) {
-        Notification notification = Notification.builder()
-                .type(type)
-                .title(title)
-                .message(msg)
-                .link(link)
-                .build();
-        notificationRepository.save(notification);
+    public void send(Member receiver, Long templateId, Map<String, String> variables) {
+        Notification template = notificationRepository.findById(templateId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 타입의 알림 템플릿이 없습니다."));
 
-        MemberNotification memberNotification = new MemberNotification(receiver, notification);
+        String jsonMetaData;
+        jsonMetaData = objectMapper.writeValueAsString(variables);
+
+        MemberNotification memberNotification = new MemberNotification(receiver, template, jsonMetaData);
         memberNotificationRepository.save(memberNotification);
     }
 
