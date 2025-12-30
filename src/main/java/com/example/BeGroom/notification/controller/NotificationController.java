@@ -6,6 +6,8 @@ import com.example.BeGroom.notification.domain.Notification;
 import com.example.BeGroom.notification.dto.CreateNotificationReqDto;
 import com.example.BeGroom.notification.dto.CreateNotificationResDto;
 import com.example.BeGroom.notification.dto.GetMemberNotificationResDto;
+import com.example.BeGroom.notification.repository.MemberNotificationRepository;
+import com.example.BeGroom.notification.repository.NotificationRepository;
 import com.example.BeGroom.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,6 +61,21 @@ public class NotificationController {
                                 new CreateNotificationResDto(notification.getId()),
                                 HttpStatus.CREATED,
                                 "알림 생성 성공"
+                        )
+                );
+    }
+
+    @PatchMapping("/{mappingId}")
+    @Operation(summary = "알림 읽음 처리", description = "알림을 읽음 처리한다.")
+    public ResponseEntity<CommonSuccessDto<Boolean>> updateNotificationRead(@PathVariable Long mappingId) {
+        notificationService.readNotification(mappingId);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(
+                        CommonSuccessDto.of(
+                                true,
+                                HttpStatus.CREATED,
+                                "알림 읽음 성공"
                         )
                 );
     }
