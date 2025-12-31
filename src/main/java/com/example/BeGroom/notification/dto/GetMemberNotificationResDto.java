@@ -46,7 +46,7 @@ public class GetMemberNotificationResDto {
         private static final ObjectMapper mapper = new ObjectMapper();
 
         public static NotificationInfo from(MemberNotification entity) {
-
+            String finalTitle = entity.getNotification().getTitle();
             String finalMessage = entity.getNotification().getMessage();
 
             try {
@@ -58,17 +58,19 @@ public class GetMemberNotificationResDto {
                         String key = "${" + entry.getKey() + "}";
                         String value = entry.getValue();
 
+                        finalTitle = finalTitle.replace(key, value);
                         finalMessage = finalMessage.replace(key, value);
                     }
                 }
             } catch (Exception e) {
+                finalTitle = entity.getNotification().getTitle();
                 finalMessage = entity.getNotification().getMessage();
             }
 
             return NotificationInfo.builder()
                     .id(entity.getId())
                     .type(entity.getNotification().getType().name())
-                    .title(entity.getNotification().getTitle())
+                    .title(finalTitle)
                     .message(finalMessage)
                     .link(entity.getNotification().getLink())
                     .isRead(entity.isRead())

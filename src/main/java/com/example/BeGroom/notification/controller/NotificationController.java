@@ -3,23 +3,23 @@ package com.example.BeGroom.notification.controller;
 import com.example.BeGroom.auth.domain.UserPrincipal;
 import com.example.BeGroom.common.response.CommonSuccessDto;
 import com.example.BeGroom.notification.domain.Notification;
+import com.example.BeGroom.notification.domain.NotificationTemplate;
 import com.example.BeGroom.notification.dto.CreateNotificationReqDto;
 import com.example.BeGroom.notification.dto.CreateNotificationResDto;
 import com.example.BeGroom.notification.dto.GetMemberNotificationResDto;
-import com.example.BeGroom.notification.repository.MemberNotificationRepository;
-import com.example.BeGroom.notification.repository.NotificationRepository;
 import com.example.BeGroom.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,10 +42,6 @@ public class NotificationController {
 
         Long memberId = userPrincipal.getMemberId();
         GetMemberNotificationResDto response = notificationService.getMyNotifications(memberId);
-
-        if (!response.getNotifications().isEmpty()) {
-            System.out.println("치환된 결과: " + response.getNotifications().get(0).getMessage());
-        }
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 CommonSuccessDto.of(
@@ -88,12 +84,12 @@ public class NotificationController {
                 );
     }
 
-    @PostMapping("/send")
+    @PostMapping("/send/inspect")
     @Operation(summary = "관리자 서비스 점검 알림 송신", description = "관리자가 사용자들에게 점검 알림을 보낸다.")
     public ResponseEntity<CommonSuccessDto<Boolean>> sendInspectNotiByAdmin(
             @RequestBody Map<String, String> requestMap
     ) {
-        notificationService.sendToAllMembers(1L, requestMap);
+        notificationService.sendToAllMembers(NotificationTemplate.NOTICE_SERVICE_INSPECTION.getId(), requestMap);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
@@ -105,4 +101,9 @@ public class NotificationController {
                 );
     }
 
+    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "알림 구독 (SSE 연결)", description = "SSE와 연결합니다.")
+        public SseEmitter subscribe(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return notificationService.subscribe(userPrincipal.getMemberId());
+    }
 }

@@ -8,6 +8,7 @@ import com.example.BeGroom.notification.domain.Notification;
 import com.example.BeGroom.notification.domain.NotificationType;
 import com.example.BeGroom.notification.dto.CreateNotificationReqDto;
 import com.example.BeGroom.notification.dto.GetMemberNotificationResDto;
+import com.example.BeGroom.notification.repository.EmitterRepository;
 import com.example.BeGroom.notification.repository.MemberNotificationRepository;
 import com.example.BeGroom.notification.repository.NotificationRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,8 +16,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -53,6 +57,18 @@ public class NotificationServiceImpl implements NotificationService {
                 .collect(Collectors.toList());
 
         memberNotificationRepository.saveAll(notifications);
+
+        String notificationContent = "새로운 알림이 도착했습니다!"; // 실제론 템플릿 치환된 메시지 사용
+
+        // 2. 각 수신자에게 실시간 알림 전송
+        for (Long receiverId : receiverIds) {
+            // 접속중인 모든 Emitter 찾기
+            Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(String.valueOf(receiverId));
+
+            emitters.forEach((id, emitter) -> {
+                sendToClient(emitter, id, notificationContent);
+            });
+        }
     }
 
     @Transactional(readOnly = false)
@@ -73,6 +89,16 @@ public class NotificationServiceImpl implements NotificationService {
                 .collect(Collectors.toList());
 
         memberNotificationRepository.saveAll(notifications);
+
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("message", "새로운 알림이 도착했습니다!");
+        eventData.put("link", "https://begroom.vercel.app/my");
+
+        Map<String, SseEmitter> allEmitters = emitterRepository.findAll();
+
+        allEmitters.forEach((id, emitter) -> {
+            sendToClient(emitter, id, eventData);
+        });
     }
 
     @Override
@@ -96,6 +122,36 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
 
         return notification;
+    }
+
+    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60;
+    private final EmitterRepository emitterRepository;
+
+    @Override
+    public SseEmitter subscribe(Long memberId) {
+        String emitterId = memberId + "_" + System.currentTimeMillis();
+        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
+
+        emitterRepository.save(emitterId, emitter);
+
+        emitter.onCompletion(() -> emitterRepository.deleteById(emitterId));
+        emitter.onTimeout(() -> emitterRepository.deleteById(emitterId));
+
+        sendToClient(emitter, emitterId, "EventStream Created. [userId=" + memberId + "]");
+
+        return emitter;
+    }
+
+    private void sendToClient(SseEmitter emitter, String id, Object data) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .id(id)
+                    .name("sse")
+                    .data(data));
+        } catch (IOException e) {
+            emitterRepository.deleteById(id);
+            emitter.completeWithError(e);
+        }
     }
 
 }
