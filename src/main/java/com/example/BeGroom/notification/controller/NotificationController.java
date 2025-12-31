@@ -19,6 +19,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/noti")
 @RequiredArgsConstructor
@@ -27,7 +30,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    @Operation(summary = "회원 알림 조회", description = "회원의 알림 리스트를 불러온다.")
+    @Operation(summary = "사용자 알림 조회", description = "특정 사용자의 알림 리스트를 불러온다.")
     public ResponseEntity<CommonSuccessDto<GetMemberNotificationResDto>> getAllMemberNotifications(@AuthenticationPrincipal UserPrincipal userPrincipal){
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         System.out.println("현재 로그인된 객체 타입: " + principal.getClass().getName());
@@ -39,17 +42,22 @@ public class NotificationController {
 
         Long memberId = userPrincipal.getMemberId();
         GetMemberNotificationResDto response = notificationService.getMyNotifications(memberId);
+
+        if (!response.getNotifications().isEmpty()) {
+            System.out.println("치환된 결과: " + response.getNotifications().get(0).getMessage());
+        }
+
         return ResponseEntity.status(HttpStatus.OK).body(
                 CommonSuccessDto.of(
                         response,
-                        HttpStatus.CREATED,
+                        HttpStatus.OK,
                         "알림 조회 성공"
                 )
         );
     }
 
     @PostMapping
-    @Operation(summary = "알림 생성", description = "알림을 생성한다.")
+    @Operation(summary = "알림 생성", description = "알림 템플릿을 생성한다.")
     public ResponseEntity<CommonSuccessDto<CreateNotificationResDto>> create(
             @Valid @RequestBody CreateNotificationReqDto reqDto
     ) {
@@ -66,7 +74,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/{mappingId}")
-    @Operation(summary = "알림 읽음 처리", description = "알림을 읽음 처리한다.")
+    @Operation(summary = "알림 읽음 처리", description = "사용자의 알림을 읽음 처리한다.")
     public ResponseEntity<CommonSuccessDto<Boolean>> updateNotificationRead(@PathVariable Long mappingId) {
         notificationService.readNotification(mappingId);
 
@@ -79,4 +87,22 @@ public class NotificationController {
                         )
                 );
     }
+
+    @PostMapping("/send")
+    @Operation(summary = "관리자 서비스 점검 알림 송신", description = "관리자가 사용자들에게 점검 알림을 보낸다.")
+    public ResponseEntity<CommonSuccessDto<Boolean>> sendInspectNotiByAdmin(
+            @RequestBody Map<String, String> requestMap
+    ) {
+        notificationService.sendToAllMembers(1L, requestMap);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(
+                        CommonSuccessDto.of(
+                                true,
+                                HttpStatus.CREATED,
+                                "서비스 점검 알림 전송 성공"
+                        )
+                );
+    }
+
 }

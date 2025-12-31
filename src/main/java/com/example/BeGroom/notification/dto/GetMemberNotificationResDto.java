@@ -43,12 +43,15 @@ public class GetMemberNotificationResDto {
         private boolean isRead;
         private LocalDateTime createdTime;
 
+        private static final ObjectMapper mapper = new ObjectMapper();
+
         public static NotificationInfo from(MemberNotification entity) {
+
             String finalMessage = entity.getNotification().getMessage();
 
             try {
                 if (entity.getMetaData() != null && !entity.getMetaData().isEmpty()) {
-                    ObjectMapper mapper = new ObjectMapper();
+
                     Map<String, String> variables = mapper.readValue(entity.getMetaData(), Map.class);
 
                     for (Map.Entry<String, String> entry : variables.entrySet()) {

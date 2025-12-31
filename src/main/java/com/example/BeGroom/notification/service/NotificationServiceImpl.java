@@ -19,33 +19,60 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberNotificationRepository memberNotificationRepository;
+    private final MemberRepository memberRepository;
     private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional(readOnly = true)
     public GetMemberNotificationResDto getMyNotifications(Long memberId) {
         List<MemberNotification> notiList = memberNotificationRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId);
         long unreadCount = memberNotificationRepository.countByMemberIdAndIsReadFalse(memberId);
         return GetMemberNotificationResDto.of(notiList, unreadCount);
     }
 
+    @Transactional(readOnly = false)
     @Override
-    public void send(Member receiver, Long templateId, Map<String, String> variables) {
+    public void send(List<Long> receiverIds, Long templateId, Map<String, String> variables) {
         Notification template = notificationRepository.findById(templateId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 타입의 알림 템플릿이 없습니다."));
 
         String jsonMetaData;
         jsonMetaData = objectMapper.writeValueAsString(variables);
 
-        MemberNotification memberNotification = new MemberNotification(receiver, template, jsonMetaData);
-        memberNotificationRepository.save(memberNotification);
+        List<Member> receivers = memberRepository.findAllById(receiverIds);
+
+        List<MemberNotification> notifications = receivers.stream()
+                .map(receiver -> new MemberNotification(receiver, template, jsonMetaData))
+                .collect(Collectors.toList());
+
+        memberNotificationRepository.saveAll(notifications);
+    }
+
+    @Transactional(readOnly = false)
+    public void sendToAllMembers(Long templateId, Map<String, String> variables) {
+        Notification template = notificationRepository.findById(templateId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 타입의 알림 템플릿이 없습니다."));
+
+        String jsonMetaData;
+        jsonMetaData = objectMapper.writeValueAsString(variables);
+
+        List<Long> targetIds = memberRepository.findAllIds();
+
+        List<MemberNotification> notifications = targetIds.stream()
+                .map(targetId -> {
+                    Member memberProxy = memberRepository.getReferenceById(targetId);
+                    return new MemberNotification(memberProxy, template, jsonMetaData);
+                })
+                .collect(Collectors.toList());
+
+        memberNotificationRepository.saveAll(notifications);
     }
 
     @Override
@@ -57,6 +84,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = false)
     public Notification createNotification(CreateNotificationReqDto reqDto) {
 
         Notification notification = Notification.createNotification(
