@@ -111,13 +111,13 @@ public class OrderServiceImpl implements OrderService {
 
         // 결제 조회 (주문 완료일 때만)
         Payment payment = null;
-        if(order.getOrderStatus() == OrderStatus.COMPLETED) {
-            payment = paymentRepository.findByOrderIdAndPaymentStatus(orderId, PaymentStatus.APPROVED)
-                    .orElseThrow(() -> new EntityNotFoundException("없는 결제입니다."));
-        } else if(order.getOrderStatus() == OrderStatus.CANCELED) {
-            payment = paymentRepository.findByOrderIdAndPaymentStatus(orderId, PaymentStatus.REFUNDED)
-                    .orElseThrow(() -> new EntityNotFoundException("없는 결제입니다."));
-        }
+//        if(order.getOrderStatus() == OrderStatus.COMPLETED) {
+//            payment = paymentRepository.findByOrderIdAndPaymentStatus(orderId, PaymentStatus.APPROVED)
+//                    .orElseThrow(() -> new EntityNotFoundException("없는 결제입니다."));
+//        } else if(order.getOrderStatus() == OrderStatus.CANCELED) {
+//            payment = paymentRepository.findByOrderIdAndPaymentStatus(orderId, PaymentStatus.REFUNDED)
+//                    .orElseThrow(() -> new EntityNotFoundException("없는 결제입니다."));
+//        }
 
         return OrderDetailResDto.of(
                 order,

@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,9 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     private OrderStatus orderStatus;
+
+    @Column(nullable = false)
+    private LocalDateTime last_activity_at;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderProduct> orderProductList = new ArrayList<>();
@@ -61,26 +65,26 @@ public class Order extends BaseEntity {
     }
 
     public void markPaymentPending() {
-        if(this.orderStatus == OrderStatus.COMPLETED ||
-                this.orderStatus == OrderStatus.CANCELED) {
-            throw new InvalidOrderStateException("결제 생성", this.orderStatus);
-        }
-        this.orderStatus = OrderStatus.PAYMENT_PENDING;
+//        if(this.orderStatus == OrderStatus.COMPLETED ||
+//                this.orderStatus == OrderStatus.CANCELED) {
+//            throw new InvalidOrderStateException("결제 생성", this.orderStatus);
+//        }
+//        this.orderStatus = OrderStatus.PAYMENT_PENDING;
     }
 
 
     public void complete() {
-        if(this.orderStatus != OrderStatus.PAYMENT_PENDING) {
-            throw new InvalidOrderStateException("결제 완료", this.orderStatus);
-        }
-        this.orderStatus = OrderStatus.COMPLETED;
+//        if(this.orderStatus != OrderStatus.PAYMENT_PENDING) {
+//            throw new InvalidOrderStateException("결제 완료", this.orderStatus);
+//        }
+//        this.orderStatus = OrderStatus.COMPLETED;
     }
 
     public void cancel() {
-        if(this.orderStatus != OrderStatus.COMPLETED) {
-            throw new InvalidOrderStateException("결제 취소", this.orderStatus);
-        }
-        this.orderStatus = OrderStatus.CANCELED;
+//        if(this.orderStatus != OrderStatus.COMPLETED) {
+//            throw new InvalidOrderStateException("결제 취소", this.orderStatus);
+//        }
+//        this.orderStatus = OrderStatus.CANCELED;
     }
 
 }
