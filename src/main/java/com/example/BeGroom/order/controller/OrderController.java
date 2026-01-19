@@ -45,6 +45,13 @@ public class OrderController {
                 );
     }
 
+    @PostMapping("/new")
+    public ResponseEntity<CommonSuccessDto<OrderCreateResDto>> createOrder() {
+
+        return null;
+    }
+
+
     @GetMapping
     @Operation(summary = "주문 내역 조회", description = "로그인한 사용자의 주문 내역을 조회한다.")
     public ResponseEntity<CommonSuccessDto<Page<OrderSummaryDto>>> getOrders(
