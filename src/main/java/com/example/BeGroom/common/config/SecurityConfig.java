@@ -68,7 +68,11 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfiguration(){
         CorsConfiguration configuration = new CorsConfiguration();
+<<<<<<< Updated upstream
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "https://www.begroom.store", "https://server.begroom.store"));
+=======
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+>>>>>>> Stashed changes
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.addExposedHeader("\"Content-Disposition\"");      // csv Header

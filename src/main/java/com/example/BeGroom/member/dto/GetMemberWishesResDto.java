@@ -1,5 +1,6 @@
 package com.example.BeGroom.member.dto;
 
+<<<<<<< Updated upstream
 import com.example.BeGroom.member.domain.Member;
 import com.example.BeGroom.product.domain.Category;
 import com.example.BeGroom.product.domain.Product;
@@ -10,6 +11,11 @@ import lombok.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
+=======
+import lombok.*;
+
+import java.util.List;
+>>>>>>> Stashed changes
 
 @Data
 @AllArgsConstructor
@@ -17,6 +23,7 @@ import java.util.stream.Collectors;
 @Builder
 public class GetMemberWishesResDto {
 
+<<<<<<< Updated upstream
     private List<WishItemDto> wish;
 
     public static GetMemberWishesResDto from(List<Wishlist> wishlists) {
@@ -71,5 +78,26 @@ public class GetMemberWishesResDto {
                     .likes(product.getWishlistCount())
                     .build();
         }
+=======
+    private List<WishDto> wish;
+
+    public static GetMemberWishesResDto from(List<WishDto> wish) {
+        return new GetMemberWishesResDto(wish);
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Getter
+    public static class WishDto {
+        private Long id;            // number -> Long
+        private String name;        // string -> String
+        private Long price;         // number -> Long (금액은 Long 추천)
+        private String imageUrl;    // string -> String
+        private String category;    // string -> String
+        private String description; // string -> String
+        private Long likes;         // number -> Long
+>>>>>>> Stashed changes
     }
 }

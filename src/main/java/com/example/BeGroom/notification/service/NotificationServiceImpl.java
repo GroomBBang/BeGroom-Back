@@ -64,7 +64,11 @@ public class NotificationServiceImpl implements NotificationService {
             Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(String.valueOf(receiverId));
 
             emitters.forEach((id, emitter) -> {
+<<<<<<< Updated upstream
                 sendToClient(emitter, id, "notification", eventData);
+=======
+                sendToClient(emitter, id, "notification", notificationContent);
+>>>>>>> Stashed changes
             });
         }
     }
