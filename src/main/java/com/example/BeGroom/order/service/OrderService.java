@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface OrderService {
     Order create(Long memberId, OrderCreateReqDto reqDto);
+    OrderCreateResDto createOrder(Long memberId, OrderCreateReqDto reqDto);
     Page<OrderSummaryDto> getOrders(Pageable pageable, Long memberId);
     OrderDetailResDto getOrderDetail(Long orderId);
     OrderInfoResDto getOrderInfo(Long memberId, Long orderId);

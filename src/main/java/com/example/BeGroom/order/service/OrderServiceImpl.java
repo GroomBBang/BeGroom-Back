@@ -72,6 +72,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderCreateResDto createOrder(Long memberId, OrderCreateReqDto reqDto) {
+        return null;
+    }
+
+
+    @Override
     public Page<OrderSummaryDto> getOrders(Pageable pageable, Long memberId) {
         // 사용자 조회
         memberRepository.findById(memberId).orElseThrow(() -> new EntityNotFoundException("없는 사용자입니다."));

@@ -34,7 +34,7 @@ public class Order extends BaseEntity {
     private OrderStatus orderStatus;
 
     @Column(nullable = false)
-    private LocalDateTime last_activity_at;
+    private LocalDateTime lastActivityAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderProduct> orderProductList = new ArrayList<>();
@@ -42,14 +42,15 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
     private List<Payment> payments;
 
-    private Order(Member member, Long totalAmount, OrderStatus orderStatus) {
+    private Order(Member member, Long totalAmount, OrderStatus orderStatus, LocalDateTime lastActivityAt) {
         this.member = member;
         this.totalAmount = totalAmount;
         this.orderStatus = orderStatus;
+        this.lastActivityAt = lastActivityAt;
     }
 
-    public static Order create(Member member, Long totalAmount, OrderStatus orderStatus) {
-        return new Order(member, totalAmount, orderStatus);
+    public static Order create(Member member, Long totalAmount, OrderStatus orderStatus, LocalDateTime lastActivityAt) {
+        return new Order(member, totalAmount, orderStatus, lastActivityAt);
     }
 
     public void addOrderProduct(OrderProduct orderProduct) {
