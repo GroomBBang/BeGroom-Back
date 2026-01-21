@@ -27,15 +27,7 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
     long countByMember_Id(Long memberId);
 
     // 특정 상품을 찜한 회원 수 조회
-<<<<<<< Updated upstream
     long countByProduct_ProductId(Long productId);
 
     List<Wishlist> findAllByMember_Id(Long memberId);
 }
-=======
-    long countByProductId(Long productId);
-
-
-
-}
->>>>>>> Stashed changes

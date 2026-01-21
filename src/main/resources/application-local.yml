@@ -20,6 +20,9 @@ spring:
       hibernate:
         format_sql: true
 
+sse:
+  timeout: 3600000
+
 jwt:
   expirationAt: 1000 # 1000
   secretKeyAt: YmV5b25kYWNjZXNzdG9rZW5zZWNyZXRrZXliZXlvbmRhY2Nlc3N0b2tlbnNlY3JldGtleWJleW9uZGFjY2Vzc3Rva2Vuc2VjcmV0a2V5
@@ -54,3 +57,6 @@ spring:
 jwt:
   expirationAt: 3600000
   secretKeyAt: YmV5b25kYWNjZXNzdG9rZW5zZWNyZXRrZXliZXlvbmRhY2Nlc3N0b2tlbnNlY3JldGtleWJleW9uZGFjY2Vzc3Rva2Vuc2VjcmV0a2V5
+
+sse:
+  timeout: 3600000

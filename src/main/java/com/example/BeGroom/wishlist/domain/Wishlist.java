@@ -1,10 +1,7 @@
 package com.example.BeGroom.wishlist.domain;
 
-<<<<<<< Updated upstream
 import com.example.BeGroom.member.domain.Member;
 import com.example.BeGroom.product.domain.Product;
-=======
->>>>>>> Stashed changes
 import com.example.BeGroom.product.domain.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,7 +34,6 @@ public class Wishlist {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-<<<<<<< Updated upstream
     // 생성 메서드
     public static Wishlist create(Member member, Product product) {
         return Wishlist.builder()
@@ -45,8 +41,6 @@ public class Wishlist {
                 .product(product)
                 .build();
     }
-=======
->>>>>>> Stashed changes
     // 회원 소유 여부 확인
     public boolean isOwnedBy(Long memberId) {
         return this.member.getId().equals(memberId);

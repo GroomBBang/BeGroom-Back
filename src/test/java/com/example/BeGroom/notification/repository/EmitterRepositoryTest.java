@@ -4,9 +4,6 @@ import com.example.BeGroom.IntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
@@ -40,7 +37,7 @@ class EmitterRepositoryTest extends IntegrationTestSupport {
 
     @DisplayName("사용자의 SSE Emitter 정보를 삭제한다.")
     @Test
-    void test(){
+    void removeEmitter() {
         // given
         String memberId = "1";
         String currentTimeMillis = "1768993200123";

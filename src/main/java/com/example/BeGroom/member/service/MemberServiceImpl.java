@@ -124,14 +124,9 @@ public class MemberServiceImpl implements MemberService {
     public GetMemberWishesResDto getMyWishes(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("회원을 찾을 수 없습니다."));
-
-<<<<<<< Updated upstream
         List<Wishlist> wishlists = wishlistRepository.findAllByMember_Id(memberId);
 
         return GetMemberWishesResDto.from(wishlists);
-=======
-        return GetMemberWishesResDto.of(member);
->>>>>>> Stashed changes
     }
 
     @Override
