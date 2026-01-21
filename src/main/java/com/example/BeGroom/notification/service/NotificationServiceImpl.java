@@ -68,7 +68,7 @@ public class NotificationServiceImpl implements NotificationService {
         memberNotificationRepository.saveAll(notifications);
 
         // 원하는 메시지 컨텐츠 생성
-        Map<String, Object> eventData = MessageUtil.createSseMessage("새로운 알림이 도착했습니다!");
+        Map<String, Object> eventData = MessageUtil.createMessageByHashMap("새로운 알림이 도착했습니다!");
 
         // 실시간 메시지 전송
         notificationNetworkService.send(eventData, NotificationTarget.Specific.of(receiverIds));
@@ -84,7 +84,7 @@ public class NotificationServiceImpl implements NotificationService {
         memberNotificationRepository.saveAll(notifications);
 
         // 원하는 메시지 컨텐츠 생성
-        Map<String, Object> eventData = MessageUtil.createSseMessage("새로운 알림이 도착했습니다!");
+        Map<String, Object> eventData = MessageUtil.createMessageByHashMap("새로운 알림이 도착했습니다!");
 
         // 실시간 메시지 전송
         notificationNetworkService.send(eventData, new NotificationTarget.Broadcast());
