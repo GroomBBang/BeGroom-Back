@@ -9,12 +9,12 @@ import com.example.BeGroom.notification.domain.NotificationTemplate;
 import com.example.BeGroom.notification.domain.NotificationType;
 import com.example.BeGroom.notification.repository.NotificationRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +28,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 
 class NotificationHistoryServiceTest extends IntegrationTestSupport {
-
-    private static final Logger log = LoggerFactory.getLogger(NotificationHistoryServiceTest.class);
     @Autowired
     private NotificationHistoryService notificationHistoryService;
 
@@ -38,6 +36,12 @@ class NotificationHistoryServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @AfterEach
+    void tearDown() {
+        notificationRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
+    }
 
     @DisplayName("알림 템플릿을 찾아서 특정 사용자에 대한 알림을 생성할 수 있다.")
     @Test
@@ -48,20 +52,20 @@ class NotificationHistoryServiceTest extends IntegrationTestSupport {
         Notification notification = createNotification();
         notificationRepository.save(notification);
 
-        List<Long> receiverIds = List.of(1L);
+        List<Long> receiverIds = List.of(member.getId());
         Map<String, String> variables = new HashMap<>();
         variables.put("orderId", "1");
 
         // when
-        List<MemberNotification> result = notificationHistoryService.createMemberNotification(receiverIds, 1L, variables);
+        List<MemberNotification> result = notificationHistoryService.createMemberNotification(receiverIds, notification.getId(), variables);
 
         // then
         assertThat(result).hasSize(1)
                 .extracting("member.id", "notification.id", "metaData")
                 .containsExactlyInAnyOrder(
                         tuple(
-                                1L,
-                                1L,
+                                member.getId(),
+                                notification.getId(),
                                 "{\"orderId\":\"1\"}"
                         )
                 );

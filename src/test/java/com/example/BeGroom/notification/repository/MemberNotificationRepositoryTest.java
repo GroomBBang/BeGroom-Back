@@ -7,6 +7,8 @@ import com.example.BeGroom.member.repository.MemberRepository;
 import com.example.BeGroom.notification.domain.MemberNotification;
 import com.example.BeGroom.notification.domain.Notification;
 import com.example.BeGroom.notification.domain.NotificationType;
+import org.aspectj.lang.annotation.After;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +27,19 @@ class MemberNotificationRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private MemberNotificationRepository memberNotificationRepository;
+
     @Autowired
     private MemberRepository memberRepository;
+
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @AfterEach
+    void tearDown() {
+        memberNotificationRepository.deleteAllInBatch();
+        notificationRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
+    }
 
     @DisplayName("유저 ID에 해당하는 알림을 생성일 기준 내림차순으로 조회한다.")
     @Test

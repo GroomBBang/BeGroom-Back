@@ -2,26 +2,28 @@ package com.example.BeGroom.notification.service.network;
 
 import com.example.BeGroom.IntegrationTestSupport;
 import com.example.BeGroom.notification.repository.EmitterRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
-    @Autowired
+    @MockitoSpyBean
     private EmitterRepository emitterRepository;
 
     @Autowired
@@ -29,6 +31,11 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
 
     @Value("${sse.timeout}")
     private Long defaultTimeout;
+
+    @AfterEach
+    void tearDown() {
+        emitterRepository.deleteAll();
+    }
 
     @DisplayName("멤버의 Client를 SSE Emitter에 등록한다.")
     @Test
@@ -124,8 +131,8 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
         Long member2Id = 2L;
         String emitterId1 = member1Id + "_" + "1000000000000";
         String emitterId2 = member2Id + "_" + "1000000000000";
-        SseEmitter emitter1 = new SseEmitter(defaultTimeout);
-        SseEmitter emitter2 = new SseEmitter(defaultTimeout);
+        SseEmitter emitter1 = mock(SseEmitter.class);
+        SseEmitter emitter2 = mock(SseEmitter.class);
 
         Map<String, SseEmitter> emitters = new HashMap<>();
         emitters.put(emitterId1, emitter1);
@@ -146,14 +153,14 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
 
     @DisplayName("등록된 SseEmitter의 특정 Client에게 이벤트를 발송한다.")
     @Test
-    void sendToClient() throws IOException {
+    void sendToMembers() throws IOException {
         // given
         Long member1Id = 1L;
         Long member2Id = 2L;
         String emitterId1 = member1Id + "_" + "1000000000000";
         String emitterId2 = member2Id + "_" + "1000000000000";
-        SseEmitter emitter1 = new SseEmitter(defaultTimeout);
-        SseEmitter emitter2 = new SseEmitter(defaultTimeout);
+        SseEmitter emitter1 = mock(SseEmitter.class);
+        SseEmitter emitter2 = mock(SseEmitter.class);
 
         Map<String, SseEmitter> emitters = new HashMap<>();
         emitters.put(emitterId1, emitter1);
@@ -164,11 +171,11 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
         message.put("message", "test message");
 
         // when
-        sseNotificationNetworkService.sendToAll(message);
+        sseNotificationNetworkService.sendToMembers(message, List.of(member1Id));
 
         // then
-        verify(emitterRepository).findAllStartWithById(member1Id.toString());
+        verify(emitterRepository).findAllStartWithById(member1Id);
         verify(emitter1, times(1)).send(any(SseEmitter.SseEventBuilder.class));
-        verify(emitter2, times(0)).send(any(SseEmitter.SseEventBuilder.class));
+        verify(emitter2, never()).send(any(SseEmitter.SseEventBuilder.class));
     }
 }

@@ -1,10 +1,8 @@
 package com.example.BeGroom.notification.repository;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,19 +16,22 @@ public class EmitterRepository {
             return emitter;
     }
 
-    public Map<String, SseEmitter> saveAll(Map<String, SseEmitter> emitters) {
+    public void saveAll(Map<String, SseEmitter> emitters) {
         emitters.forEach(this::save);
-        return emitters;
     }
 
     public void deleteById(String id) {
         emitters.remove(id);
     }
 
-    public Map<String, SseEmitter> findAllStartWithById(String memberId) {
+    public void deleteAll() {
+        emitters.forEach((id, emitter) -> emitters.remove(id));
+    }
+
+    public Map<String, SseEmitter> findAllStartWithById(Long memberId) {
         Map<String, SseEmitter> result = new ConcurrentHashMap<>();
         emitters.forEach((id, emitter) -> {
-            if(id.startsWith(memberId)){
+            if(id.startsWith(memberId.toString())){
                 result.put(id, emitter);
             }
         });

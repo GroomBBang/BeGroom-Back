@@ -13,6 +13,8 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
+import static com.example.BeGroom.notification.domain.NotificationMessage.SSE_CONNECTED;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,7 +46,7 @@ public class SseNotificationNetworkService implements NotificationNetworkService
 
         emitterRepository.save(emitterId, emitter);
 
-        sendBySse(emitter, emitterId, "connect", "connected!");
+        sendBySse(emitter, emitterId, "connect", SSE_CONNECTED);
 
         return emitter;
     }
@@ -63,13 +65,13 @@ public class SseNotificationNetworkService implements NotificationNetworkService
             throw new IllegalArgumentException("멤버 ID는 양수여야 합니다.");
         }
 
-        Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(String.valueOf(memberId));
+        Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(memberId);
 
         emitters.forEach((id, emitter) -> {
             try {
                 emitter.complete();
             } catch (Exception e) {
-                log.warn("disconnect fail : " + id);
+                log.warn("[SSE] Disconnect failed : " + id);
             } finally {
                 emitterRepository.deleteById(id);
             }
@@ -86,7 +88,7 @@ public class SseNotificationNetworkService implements NotificationNetworkService
 
     public void sendToMembers(Map<String, Object> msg, List<Long> receiverIds){
         for (Long receiverId : receiverIds) {
-            Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(String.valueOf(receiverId));
+            Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(receiverId);
 
             emitters.forEach((id, emitter) -> {
                 sendBySse(emitter, id, "notification", msg);
