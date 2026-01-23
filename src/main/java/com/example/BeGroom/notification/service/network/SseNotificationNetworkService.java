@@ -59,10 +59,24 @@ public class SseNotificationNetworkService implements NotificationNetworkService
     }
 
     @Override
-    public void send(List<NetworkMessageDto> messages, NotificationTarget target) {
-        switch (target) {
-            case NotificationTarget.Broadcast _ -> sendToAll(messages);
-            case NotificationTarget.Specific s -> sendToMembers(messages, s.memberIds());
+    public void send(List<NetworkMessageDto> messages) {
+        for (NetworkMessageDto message : messages) {
+
+            // 2. 이 메시지를 받을 사람의 ID 확인
+            Long receiverId = message.getReceiverId();
+
+            // 3. 해당 유저의 Emitter들만 쏙 빼옵니다. (PC, 모바일 탭 동시 접속 고려)
+            Map<String, SseEmitter> userEmitters = emitterRepository.findAllStartWithById(receiverId);
+
+            // 4. 해당 유저의 모든 연결(탭)에 메시지를 발송합니다.
+            userEmitters.forEach((emitterId, emitter) -> {
+                sendBySse(
+                        emitter,
+                        message.getEventId(),   // DTO에 담겨온 DB PK (책갈피용 ID)
+                        message.getEventName(), // "notification"
+                        message.getData()       // 실제 알림 내용
+                );
+            });
         }
     }
 
@@ -112,37 +126,6 @@ public class SseNotificationNetworkService implements NotificationNetworkService
             } else {
                 sendBySse(emitter, emitterId, "connect", CONNECT);
             }
-        }
-    }
-
-    public void sendToAll(List<NetworkMessageDto> messages){
-        for (NetworkMessageDto message : messages) {
-            Map<String, SseEmitter> userEmitters = emitterRepository.findAll();
-            userEmitters.forEach((emitterId, emitter) -> {
-                sendBySse(
-                        emitter,
-                        message.getEventId(),
-                        message.getEventName(),
-                        message.getData()
-                );
-            });
-        }
-    }
-
-    public void sendToMembers(List<NetworkMessageDto> messages, List<Long> receiverIds){
-        for (NetworkMessageDto message : messages) {
-            Long receiverId = message.getReceiverId();
-
-            Map<String, SseEmitter> userEmitters = emitterRepository.findAllStartWithById(receiverId);
-
-            userEmitters.forEach((emitterId, emitter) -> {
-                sendBySse(
-                        emitter,
-                        message.getEventId(),
-                        message.getEventName(),
-                        message.getData()
-                );
-            });
         }
     }
 

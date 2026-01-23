@@ -1,6 +1,7 @@
 package com.example.BeGroom.notification.service.network;
 
 import com.example.BeGroom.IntegrationTestSupport;
+import com.example.BeGroom.notification.dto.NetworkMessageDto;
 import com.example.BeGroom.notification.repository.EmitterRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -141,9 +143,10 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
 
         Map<String, Object> message = new HashMap<>();
         message.put("message", "test message");
+        List<NetworkMessageDto> eventData =
 
         // when
-        sseNotificationNetworkService.sendToAll(message);
+        sseNotificationNetworkService.send(message);
 
         // then
         verify(emitterRepository).findAll();
@@ -188,5 +191,15 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
         // when
 
         // then
+    }
+
+    private NetworkMessageDto createNetworkMessageDto(){
+        return NetworkMessageDto.builder()
+                .receiverId()
+                .eventId()
+                .eventName()
+                .message()
+                .data()
+                .build();
     }
 }

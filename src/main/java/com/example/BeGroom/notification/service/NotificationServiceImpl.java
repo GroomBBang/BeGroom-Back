@@ -6,13 +6,14 @@ import com.example.BeGroom.notification.domain.Notification;
 import com.example.BeGroom.notification.dto.CreateNotificationReqDto;
 import com.example.BeGroom.notification.dto.GetMemberNotificationResDto;
 import com.example.BeGroom.notification.dto.NetworkMessageDto;
+import com.example.BeGroom.notification.event.NotificationSavedEvent;
 import com.example.BeGroom.notification.repository.MemberNotificationRepository;
 import com.example.BeGroom.notification.repository.NotificationRepository;
 import com.example.BeGroom.notification.service.network.NotificationNetworkService;
-import com.example.BeGroom.notification.service.network.NotificationTarget;
 import com.example.BeGroom.notification.util.MessageUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,8 @@ import static com.example.BeGroom.notification.domain.SseEventMessage.COMMON_REC
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
+    private final ApplicationEventPublisher eventPublisher;
+
     private final NotificationRepository notificationRepository;
     private final MemberNotificationRepository memberNotificationRepository;
     private final MemberRepository memberRepository;
@@ -65,17 +68,11 @@ public class NotificationServiceImpl implements NotificationService {
 
         // Network message 생성
         List<NetworkMessageDto> eventData = notifications.stream()
-                .map(notification -> NetworkMessageDto.builder()
-                        .receiverId(notification.getMember().getId())
-                        .eventId(String.valueOf(notification.getId()))
-                        .eventName("notification")
-                        .data(MessageUtil.createMessageByHashMap(COMMON_RECEIVE_NOTIFICATION_SUCCESS.getMessageTemplate()))
-                        .build()
-                )
+                .map(NetworkMessageDto::of)
                 .collect(Collectors.toList());
 
-        // 실시간 메시지 전송
-        notificationNetworkService.send(eventData, NotificationTarget.Specific.of(receiverIds));
+        // 커밋이 된 뒤에 SSE event 수행
+        eventPublisher.publishEvent(new NotificationSavedEvent(eventData));
     }
 
     @Transactional(readOnly = false)
@@ -89,17 +86,11 @@ public class NotificationServiceImpl implements NotificationService {
 
         // Network message 생성
         List<NetworkMessageDto> eventData = notifications.stream()
-                .map(notification -> NetworkMessageDto.builder()
-                        .receiverId(notification.getMember().getId())
-                        .eventId(String.valueOf(notification.getId()))
-                        .eventName("notification")
-                        .data(MessageUtil.createMessageByHashMap(COMMON_RECEIVE_NOTIFICATION_SUCCESS.getMessageTemplate()))
-                        .build()
-                )
+                .map(NetworkMessageDto::of)
                 .collect(Collectors.toList());
 
-        // 실시간 메시지 전송
-        notificationNetworkService.send(eventData, new NotificationTarget.Broadcast());
+        // 커밋이 된 뒤에 SSE event 수행
+        eventPublisher.publishEvent(new NotificationSavedEvent(eventData));
     }
 
     @Override

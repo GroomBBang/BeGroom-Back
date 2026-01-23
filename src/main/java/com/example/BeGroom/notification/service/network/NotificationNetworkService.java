@@ -11,7 +11,7 @@ public interface NotificationNetworkService {
     default Object connect(Long memberId, LocalDateTime connectTime){ return new Object(); }
 
     // 알림 전송 메서드
-    void send(List<NetworkMessageDto> messages, NotificationTarget target);
+    void send(List<NetworkMessageDto> messages);
 
     // 네트워크 연결 종료 메서드
     default void disconnect(Long memberId) {}
