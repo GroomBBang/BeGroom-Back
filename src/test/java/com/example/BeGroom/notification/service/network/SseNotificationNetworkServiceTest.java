@@ -178,4 +178,15 @@ class SseNotificationNetworkServiceTest extends IntegrationTestSupport {
         verify(emitter1, times(1)).send(any(SseEmitter.SseEventBuilder.class));
         verify(emitter2, never()).send(any(SseEmitter.SseEventBuilder.class));
     }
+
+    //todo
+    @DisplayName("")
+    @Test
+    void sseConnectionMessage(){
+        // given
+
+        // when
+
+        // then
+    }
 }

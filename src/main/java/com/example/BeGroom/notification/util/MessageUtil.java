@@ -6,6 +6,8 @@ import com.example.BeGroom.notification.domain.Notification;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,5 +23,24 @@ public class MessageUtil {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("message", message);
         return eventData;
+    }
+
+    public static long parseMessageIdFromHeader(String lastEventId) {
+        try {
+            String[] parts = lastEventId.split("_");
+            String pureId = parts[parts.length - 1];
+            return Long.parseLong(pureId);
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    public static String makeEmitterId(Long memberId, LocalDateTime connectTime) {
+        try {
+            long timestamp = connectTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            return memberId + "_" + timestamp;
+        } catch (Exception e) {
+            return "";
+        }
     }
 }

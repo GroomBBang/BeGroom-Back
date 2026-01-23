@@ -1,6 +1,10 @@
 package com.example.BeGroom.notification.service.network;
 
+import com.example.BeGroom.notification.dto.NetworkMessageDto;
+import com.example.BeGroom.notification.dto.SseMessageDto;
 import com.example.BeGroom.notification.repository.EmitterRepository;
+import com.example.BeGroom.notification.repository.MemberNotificationRepository;
+import com.example.BeGroom.notification.util.MessageUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +17,8 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
-import static com.example.BeGroom.notification.domain.NotificationMessage.SSE_CONNECTED;
+import static com.example.BeGroom.notification.domain.SseEventMessage.*;
+import static com.example.BeGroom.notification.util.MessageUtil.makeEmitterId;
 
 @Slf4j
 @Service
@@ -21,6 +26,7 @@ import static com.example.BeGroom.notification.domain.NotificationMessage.SSE_CO
 public class SseNotificationNetworkService implements NotificationNetworkService {
 
     private final EmitterRepository emitterRepository;
+    private final MemberNotificationRepository memberNotificationRepository;
 
     @Value("${sse.timeout}")
     private Long defaultTimeout;
@@ -40,22 +46,23 @@ public class SseNotificationNetworkService implements NotificationNetworkService
             emitterRepository.deleteById(emitterId);
         });
         emitter.onTimeout(() -> {
+            emitter.complete();
             log.info("SSE Connection Timed Out: {}", emitterId);
-            emitterRepository.deleteById(emitterId);
+        });
+        emitter.onError((_) -> {
+            emitter.complete();
         });
 
         emitterRepository.save(emitterId, emitter);
-
-        sendBySse(emitter, emitterId, "connect", SSE_CONNECTED);
 
         return emitter;
     }
 
     @Override
-    public void send(Map<String, Object> msg, NotificationTarget target) {
+    public void send(List<NetworkMessageDto> messages, NotificationTarget target) {
         switch (target) {
-            case NotificationTarget.Broadcast b -> sendToAll(msg);
-            case NotificationTarget.Specific s -> sendToMembers(msg, s.memberIds());
+            case NotificationTarget.Broadcast _ -> sendToAll(messages);
+            case NotificationTarget.Specific s -> sendToMembers(messages, s.memberIds());
         }
     }
 
@@ -78,25 +85,68 @@ public class SseNotificationNetworkService implements NotificationNetworkService
         });
     }
 
-    public void sendToAll(Map<String, Object> msg){
-        Map<String, SseEmitter> allEmitters = emitterRepository.findAll();
-
-        allEmitters.forEach((id, emitter) -> {
-            sendBySse(emitter, id, "notification", msg);
-        });
+    public SseEmitter subscribeWithHistory(Long memberId, String lastEventId, LocalDateTime connectTime) {
+        SseEmitter emitter = this.connect(memberId, connectTime);
+        String emitterId = makeEmitterId(memberId, connectTime);
+        this.sseConnectionMessage(memberId, lastEventId, emitterId, emitter);
+        return emitter;
     }
 
-    public void sendToMembers(Map<String, Object> msg, List<Long> receiverIds){
-        for (Long receiverId : receiverIds) {
-            Map<String, SseEmitter> emitters = emitterRepository.findAllStartWithById(receiverId);
+    public void sseConnectionMessage(Long memberId, String lastEventId, String emitterId, SseEmitter emitter) {
+        if (!lastEventId.isEmpty()) {
+            try {
+                long lastId = MessageUtil.parseMessageIdFromHeader(lastEventId);
+                long lostCount = memberNotificationRepository.countByMemberIdAndIdGreaterThan(memberId, lastId);
 
-            emitters.forEach((id, emitter) -> {
-                sendBySse(emitter, id, "notification", msg);
+                if (lostCount > 0) {
+                    sendBySse(emitter, emitterId, "notification", RETRY_RECEIVE_NOTIFICATION_SUCCESS.format(lostCount));
+                }
+            } catch (Exception e) {
+                log.error("재연결 데이터 처리 중 오류", e);
+            }
+        } else {
+            long unreadCount = memberNotificationRepository.countByMemberIdAndIsReadFalse(memberId);
+
+            if (unreadCount > 0) {
+                sendBySse(emitter, emitterId, "notification", FIRST_CONNECT_UNREAD.format(unreadCount));
+            } else {
+                sendBySse(emitter, emitterId, "connect", CONNECT);
+            }
+        }
+    }
+
+    public void sendToAll(List<NetworkMessageDto> messages){
+        for (NetworkMessageDto message : messages) {
+            Map<String, SseEmitter> userEmitters = emitterRepository.findAll();
+            userEmitters.forEach((emitterId, emitter) -> {
+                sendBySse(
+                        emitter,
+                        message.getEventId(),
+                        message.getEventName(),
+                        message.getData()
+                );
             });
         }
     }
 
-    private void sendBySse(SseEmitter emitter, String id, String eventName, Object data) {
+    public void sendToMembers(List<NetworkMessageDto> messages, List<Long> receiverIds){
+        for (NetworkMessageDto message : messages) {
+            Long receiverId = message.getReceiverId();
+
+            Map<String, SseEmitter> userEmitters = emitterRepository.findAllStartWithById(receiverId);
+
+            userEmitters.forEach((emitterId, emitter) -> {
+                sendBySse(
+                        emitter,
+                        message.getEventId(),
+                        message.getEventName(),
+                        message.getData()
+                );
+            });
+        }
+    }
+
+    public void sendBySse(SseEmitter emitter, String id, String eventName, Object data) {
         try {
             emitter.send(SseEmitter.event()
                     .id(id)
@@ -106,5 +156,4 @@ public class SseNotificationNetworkService implements NotificationNetworkService
             emitterRepository.deleteById(id);
         }
     }
-
 }

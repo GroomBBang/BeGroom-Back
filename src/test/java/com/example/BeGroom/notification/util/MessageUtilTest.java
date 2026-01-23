@@ -37,4 +37,25 @@ class MessageUtilTest {
                 .isInstanceOf( IllegalArgumentException.class)
                 .hasMessage("메시지가 비어있습니다.");
     }
+
+    //todo
+    @DisplayName("")
+    @Test
+    void parseMessageIdFromHeader(){
+        // given
+
+        // when
+
+        // then
+    }
+
+    @DisplayName("")
+    @Test
+    void makeEmitterId(){
+        // given
+
+        // when
+
+        // then
+    }
 }

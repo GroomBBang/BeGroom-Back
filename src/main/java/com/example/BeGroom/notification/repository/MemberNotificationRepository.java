@@ -10,10 +10,12 @@ import java.util.List;
 
 public interface MemberNotificationRepository extends JpaRepository<MemberNotification, Long> {
     List<MemberNotification> findAllByMemberIdOrderByCreatedAtDesc(Long memberId);
+
     long countByMemberIdAndIsReadFalse(Long memberId);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE MemberNotification mn SET mn.isRead = true, mn.readAt = CURRENT_TIMESTAMP WHERE mn.member.id = :memberId AND mn.isRead = false")
     void bulkMarkAsRead(@Param("memberId") Long memberId);
 
+    long countByMemberIdAndIdGreaterThan(Long memberId, long lastId);
 }
