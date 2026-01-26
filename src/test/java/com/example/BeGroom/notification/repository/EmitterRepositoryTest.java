@@ -92,7 +92,7 @@ class EmitterRepositoryTest extends IntegrationTestSupport {
 
     @DisplayName("동시에 100명이 Emitter 저장을 요청해도 데이터가 유실되지 않는다.")
     @Test
-    void saveEmitter_Concurrency() throws InterruptedException {
+    void saveEmitterWith100Request() throws InterruptedException {
         // given
         int threadCount = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
@@ -221,15 +221,5 @@ class EmitterRepositoryTest extends IntegrationTestSupport {
 
         // then
         assertThat(result).containsOnlyKeys(emitter1Id, emitter2Id);
-    }
-
-    @DisplayName("알림 발송 중 연결이 끊기면 IOException이 발생하고 이를 적절히 처리한다.")
-    @Test
-    void test(){
-        // given
-
-        // when
-
-        // then
     }
 }

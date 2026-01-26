@@ -26,6 +26,7 @@ public class NetworkMessageDto {
                 .data(MessageUtil.createMessageByHashMap(COMMON_RECEIVE_NOTIFICATION_SUCCESS.getMessageTemplate()))
                 .build();
     }
+
     @Builder
     private NetworkMessageDto(Long receiverId, String eventId, String eventName, String message, Object data) {
         this.receiverId = receiverId;

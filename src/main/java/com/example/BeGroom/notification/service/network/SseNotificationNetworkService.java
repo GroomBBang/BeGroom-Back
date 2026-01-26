@@ -1,6 +1,7 @@
 package com.example.BeGroom.notification.service.network;
 
 import com.example.BeGroom.notification.dto.NetworkMessageDto;
+import com.example.BeGroom.notification.dto.NotificationSendResult;
 import com.example.BeGroom.notification.dto.SseMessageDto;
 import com.example.BeGroom.notification.repository.EmitterRepository;
 import com.example.BeGroom.notification.repository.MemberNotificationRepository;
@@ -62,19 +63,17 @@ public class SseNotificationNetworkService implements NotificationNetworkService
     public void send(List<NetworkMessageDto> messages) {
         for (NetworkMessageDto message : messages) {
 
-            // 2. 이 메시지를 받을 사람의 ID 확인
             Long receiverId = message.getReceiverId();
 
-            // 3. 해당 유저의 Emitter들만 쏙 빼옵니다. (PC, 모바일 탭 동시 접속 고려)
             Map<String, SseEmitter> userEmitters = emitterRepository.findAllStartWithById(receiverId);
 
-            // 4. 해당 유저의 모든 연결(탭)에 메시지를 발송합니다.
             userEmitters.forEach((emitterId, emitter) -> {
                 sendBySse(
                         emitter,
-                        message.getEventId(),   // DTO에 담겨온 DB PK (책갈피용 ID)
-                        message.getEventName(), // "notification"
-                        message.getData()       // 실제 알림 내용
+                        emitterId,
+                        message.getEventId(),
+                        message.getEventName(),
+                        message.getData()
                 );
             });
         }
@@ -106,37 +105,65 @@ public class SseNotificationNetworkService implements NotificationNetworkService
         return emitter;
     }
 
-    public void sseConnectionMessage(Long memberId, String lastEventId, String emitterId, SseEmitter emitter) {
+    public NotificationSendResult sseConnectionMessage(Long memberId, String lastEventId, String emitterId, SseEmitter emitter) {
         if (!lastEventId.isEmpty()) {
             try {
-                long lastId = MessageUtil.parseMessageIdFromHeader(lastEventId);
-                long lostCount = memberNotificationRepository.countByMemberIdAndIdGreaterThan(memberId, lastId);
+                long lastId = Long.parseLong(lastEventId);
+                Object[] table = memberNotificationRepository.findLostSummary(memberId, lastId);
+                Object[] summary = (Object[]) table[0];
+
+                long lostCount = ((Number) summary[0]).longValue();
+                Long maxId = summary[1] != null ? ((Number) summary[1]).longValue() : 0L;
 
                 if (lostCount > 0) {
-                    sendBySse(emitter, emitterId, "notification", RETRY_RECEIVE_NOTIFICATION_SUCCESS.format(lostCount));
+                    sendBySse(emitter, emitterId, String.valueOf(maxId), "notification", RETRY_RECEIVE_NOTIFICATION_SUCCESS.format(lostCount));
+                    return NotificationSendResult.success(emitterId, String.valueOf(maxId));
                 }
+
+                return NotificationSendResult.success(emitterId, "");
             } catch (Exception e) {
-                log.error("재연결 데이터 처리 중 오류", e);
+                log.warn("[SSE] Disconnect failed : " + lastEventId);
+                return NotificationSendResult.failure(emitterId, "", e.getMessage());
             }
         } else {
-            long unreadCount = memberNotificationRepository.countByMemberIdAndIsReadFalse(memberId);
+            Object[] table = memberNotificationRepository.findUnreadSummary(memberId);
+            Object[] summary = (Object[]) table[0];
+
+            long unreadCount = ((Number) summary[0]).longValue();
+            Long maxId = summary[1] != null ? ((Number) summary[1]).longValue() : 0L;
 
             if (unreadCount > 0) {
-                sendBySse(emitter, emitterId, "notification", FIRST_CONNECT_UNREAD.format(unreadCount));
+                sendBySse(emitter, emitterId, String.valueOf(maxId), "notification", FIRST_CONNECT_UNREAD.format(unreadCount));
+                return NotificationSendResult.success(emitterId, String.valueOf(maxId));
             } else {
-                sendBySse(emitter, emitterId, "connect", CONNECT);
+                sendHeartBeat(emitter, emitterId);
+                return NotificationSendResult.success(emitterId, "");
             }
         }
     }
 
-    public void sendBySse(SseEmitter emitter, String id, String eventName, Object data) {
+    public NotificationSendResult sendBySse(SseEmitter emitter, String emitterId, String eventId, String eventName, Object data) {
         try {
             emitter.send(SseEmitter.event()
-                    .id(id)
+                    .id(eventId)
                     .name(eventName)
                     .data(data));
+            return NotificationSendResult.success(emitterId, eventId);
         } catch (IOException | IllegalStateException e) {
-            emitterRepository.deleteById(id);
+            emitterRepository.deleteById(emitterId);
+            return NotificationSendResult.failure(emitterId, eventId, e.getMessage());
         }
     }
+
+    public NotificationSendResult sendHeartBeat(SseEmitter emitter, String emitterId) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("heartbeat"));
+            return NotificationSendResult.success(emitterId, "");
+        } catch (IOException | IllegalStateException e) {
+            emitterRepository.deleteById(emitterId);
+            return NotificationSendResult.failure(emitterId, "", e.getMessage());
+        }
+    }
+
 }

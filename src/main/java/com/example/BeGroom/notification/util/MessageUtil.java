@@ -25,16 +25,6 @@ public class MessageUtil {
         return eventData;
     }
 
-    public static long parseMessageIdFromHeader(String lastEventId) {
-        try {
-            String[] parts = lastEventId.split("_");
-            String pureId = parts[parts.length - 1];
-            return Long.parseLong(pureId);
-        } catch (Exception e) {
-            return 0L;
-        }
-    }
-
     public static String makeEmitterId(Long memberId, LocalDateTime connectTime) {
         try {
             long timestamp = connectTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();

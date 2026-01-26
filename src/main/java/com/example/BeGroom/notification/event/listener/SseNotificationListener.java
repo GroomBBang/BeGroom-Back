@@ -15,7 +15,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class SseNotificationListener {
     private final NotificationNetworkService notificationNetworkService;
 
-    //TODO: Async의 동작원리와 문제점을 이해하면 해결책이 나온다!
     @Async()
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onNotificationSaved(NotificationSavedEvent event) {

@@ -22,9 +22,8 @@ public class SseHeartbeatScheduler {
     public void sendHeartbeat() {
         Map<String, SseEmitter> emitters = emitterRepository.findAll();
 
-        emitters.forEach((id, emitter) -> {
-            sseNotificationNetworkService.sendBySse(emitter, id, HEARTBEAT.getEventName(),
-                    MessageUtil.createMessageByHashMap(HEARTBEAT.getMessageTemplate()));
+        emitters.forEach((emitterId, emitter) -> {
+           sseNotificationNetworkService.sendHeartBeat(emitter, emitterId);
         });
     }
 }

@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EmitterRepository {
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    //TODO: 사용자가 많아진다면 메모리가 부족해질거같은데 어떻게 해야할까?
     public SseEmitter save(String emitterId, SseEmitter emitter) {
             emitters.put(emitterId, emitter);
             return emitter;

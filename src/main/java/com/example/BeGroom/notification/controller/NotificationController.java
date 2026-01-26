@@ -34,7 +34,6 @@ public class NotificationController {
     private final NotificationNetworkService notificationNetworkService;
     private final SseNotificationNetworkService sseNotificationNetworkService;
 
-    /// TODO: PC코드에 swagger등 핵심 비즈니스 로직이 아닌 코드들이 있으면 코드가 비대해지거나 설명이 비대졌을떄 보기가 편할까요?
     @GetMapping
     @Operation(summary = "사용자 알림 조회", description = "특정 사용자의 알림 리스트를 불러온다.")
     public ResponseEntity<CommonSuccessDto<GetMemberNotificationResDto>> getAllMemberNotifications(@AuthenticationPrincipal UserPrincipal userPrincipal){
