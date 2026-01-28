@@ -12,10 +12,10 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class MonthlySettlementId implements Serializable {
     // 년
-    @Column(nullable = false)
+    @Column( nullable = false)
     private int year;
     // 월
-    @Column(nullable = false)
+    @Column( nullable = false)
     private int month;
     // 판매자ID
     @Column(nullable = false)

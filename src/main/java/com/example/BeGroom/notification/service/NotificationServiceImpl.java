@@ -1,34 +1,33 @@
 package com.example.BeGroom.notification.service;
 
-import com.example.BeGroom.member.domain.Member;
 import com.example.BeGroom.member.repository.MemberRepository;
 import com.example.BeGroom.notification.domain.MemberNotification;
 import com.example.BeGroom.notification.domain.Notification;
 import com.example.BeGroom.notification.dto.CreateNotificationReqDto;
 import com.example.BeGroom.notification.dto.GetMemberNotificationResDto;
-import com.example.BeGroom.notification.repository.EmitterRepository;
+import com.example.BeGroom.notification.dto.NetworkMessageDto;
+import com.example.BeGroom.notification.event.NotificationSavedEvent;
 import com.example.BeGroom.notification.repository.MemberNotificationRepository;
 import com.example.BeGroom.notification.repository.NotificationRepository;
 import com.example.BeGroom.notification.service.network.NotificationNetworkService;
-import com.example.BeGroom.notification.service.network.NotificationTarget;
 import com.example.BeGroom.notification.util.MessageUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.example.BeGroom.notification.domain.SseEventMessage.COMMON_RECEIVE_NOTIFICATION_SUCCESS;
+
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
+    private final ApplicationEventPublisher eventPublisher;
+
     private final NotificationRepository notificationRepository;
     private final MemberNotificationRepository memberNotificationRepository;
     private final MemberRepository memberRepository;
@@ -67,11 +66,13 @@ public class NotificationServiceImpl implements NotificationService {
         // DB Insert
         memberNotificationRepository.saveAll(notifications);
 
-        // 원하는 메시지 컨텐츠 생성
-        Map<String, Object> eventData = MessageUtil.createSseMessage("새로운 알림이 도착했습니다!");
+        // Network message 생성
+        List<NetworkMessageDto> eventData = notifications.stream()
+                .map(NetworkMessageDto::of)
+                .collect(Collectors.toList());
 
-        // 실시간 메시지 전송
-        notificationNetworkService.send(eventData, NotificationTarget.Specific.of(receiverIds));
+        // 커밋이 된 뒤에 SSE event 수행
+        eventPublisher.publishEvent(new NotificationSavedEvent(eventData));
     }
 
     @Transactional(readOnly = false)
@@ -83,18 +84,20 @@ public class NotificationServiceImpl implements NotificationService {
         // DB Insert
         memberNotificationRepository.saveAll(notifications);
 
-        // 원하는 메시지 컨텐츠 생성
-        Map<String, Object> eventData = MessageUtil.createSseMessage("새로운 알림이 도착했습니다!");
+        // Network message 생성
+        List<NetworkMessageDto> eventData = notifications.stream()
+                .map(NetworkMessageDto::of)
+                .collect(Collectors.toList());
 
-        // 실시간 메시지 전송
-        notificationNetworkService.send(eventData, new NotificationTarget.Broadcast());
+        // 커밋이 된 뒤에 SSE event 수행
+        eventPublisher.publishEvent(new NotificationSavedEvent(eventData));
     }
 
     @Override
     @Transactional
     public void readNotification(Long mappingId) {
         MemberNotification memberNotification = memberNotificationRepository.findById(mappingId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 알림입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 알림이 존재하지 않습니다."));
 
         memberNotification.read();
     }

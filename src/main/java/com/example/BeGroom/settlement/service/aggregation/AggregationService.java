@@ -1,7 +1,7 @@
 package com.example.BeGroom.settlement.service.aggregation;
 
-import com.example.BeGroom.settlement.domain.PaymentStatus;
 import com.example.BeGroom.settlement.domain.Settlement;
+import com.example.BeGroom.settlement.domain.SettlementPaymentStatus;
 import com.example.BeGroom.settlement.domain.SettlementStatus;
 import com.example.BeGroom.settlement.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static com.example.BeGroom.settlement.domain.SettlementPaymentStatus.REFUND;
+import static com.example.BeGroom.settlement.domain.SettlementStatus.SETTLED;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +26,10 @@ public class AggregationService {
     @Transactional
     public void aggregate() {
         // 미집계 데이터 조회
-        List<Settlement> unaggregated = settlementRepository.findByStatus(SettlementStatus.UNSETTLED);
+        List<Settlement> unaggregated = settlementRepository.findByStatusAndIsAggregatedFalse(SETTLED);
 
         for(Settlement settlement : unaggregated){
-            if(settlement.getPaymentStatus() == PaymentStatus.REFUND){
+            if(settlement.getSettlementPaymentStatus() == REFUND){
                 updateRefund(settlement);
             }else {
                 insertPayment(settlement);
